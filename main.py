@@ -1,4 +1,5 @@
 import discord
+import os
 from discord import app_commands
 from level import add_xp
 from level_image import generate_level_up
