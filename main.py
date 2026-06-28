@@ -2,7 +2,6 @@ import discord
 import os
 from discord import app_commands
 from level import add_xp
-from level_image import generate_level_up
 
 class Trinity(discord.Client):
     def __init__(self):
@@ -70,8 +69,6 @@ class Trinity(discord.Client):
                 canal = self.get_channel(1520140530489622709)
 
                 if canal:
-                    img = await generate_level_up(message.author, level)
-
                     await canal.send(
                         content=f"🎉 Parabéns {message.author.mention}! Você subiu para o **nível {level}**!",
                         file=discord.File(img, filename="levelup.png")
