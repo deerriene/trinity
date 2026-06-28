@@ -1,9 +1,12 @@
 import discord
 from discord import app_commands
+from level import add_xp
+from level_image import generate_level_up
 
 class Trinity(discord.Client):
     def __init__(self):
         intents = discord.Intents.all()
+        intents.message_content = True
         super().__init__(intents=intents)
         self.tree = app_commands.CommandTree(self)
 
@@ -53,6 +56,24 @@ class Trinity(discord.Client):
             embed=embed
         )
 
+    async def on_message(self, message):
+        print(f"Mensagem detectada de {message.author}")
+        if message.author.bot:
+            return
+
+        resultado = await add_xp(message.author)
+
+        if resultado:
+            upou, level, xp = resultado
+
+            if upou:
+                canal = self.get_channel(1520140530489622709)
+
+                if canal:
+                    await canal.send(
+                        f"🎉 Parabéns {message.author.mention}! Você subiu para o **nível {level}**!"
+                    )
+
 bot = Trinity()
 
 @bot.tree.command(name="olá-mundo",description="Primeiro comando do Bot")
@@ -68,5 +89,4 @@ async def olamundo(interaction:discord.Interaction,numero1:int,numero2:int):
     numero_somado = numero1 + numero2
     await interaction.response.send_message(f"O numero somado é {numero_somado}.",ephemeral=True)
 
-import os
 bot.run(os.getenv("DISCORD_TOKEN"))
