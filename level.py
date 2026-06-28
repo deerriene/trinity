@@ -32,7 +32,7 @@ cooldowns = {}
 
 
 def xp_needed(level):
-    return 5 * (level ** 2) + 50 * level + 100
+    return 40 * level
 
 
 def get_user(user_id):
