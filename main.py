@@ -58,7 +58,6 @@ class Trinity(discord.Client):
         )
 
     async def on_message(self, message):
-        print(f"Mensagem detectada de {message.author}")
         if message.author.bot:
             return
 
@@ -71,8 +70,11 @@ class Trinity(discord.Client):
                 canal = self.get_channel(1520140530489622709)
 
                 if canal:
+                    img = await generate_level_up(message.author, level)
+
                     await canal.send(
-                        f"🎉 Parabéns {message.author.mention}! Você subiu para o **nível {level}**!"
+                        content=f"🎉 Parabéns {message.author.mention}! Você subiu para o **nível {level}**!",
+                        file=discord.File(img, filename="levelup.png")
                     )
 
 bot = Trinity()
@@ -89,5 +91,5 @@ async def olamundo(interaction:discord.Interaction):
 async def olamundo(interaction:discord.Interaction,numero1:int,numero2:int):
     numero_somado = numero1 + numero2
     await interaction.response.send_message(f"O numero somado é {numero_somado}.",ephemeral=True)
-
+    
 bot.run(os.getenv("DISCORD_TOKEN"))
