@@ -70,6 +70,8 @@ async def add_xp(member):
 
     xp, level = get_user(member.id)
 
+    print(f"{member} | XP: {xp} | LEVEL: {level}")
+
     ganho = random.randint(XP_MIN, XP_MAX)
 
     # Booster ganha 2x XP
@@ -94,5 +96,7 @@ async def add_xp(member):
     )
 
     conn.commit()
+
+    print(f"RETORNANDO -> upou={upou}, level={level}, xp={xp}")
 
     return upou, level, xp
