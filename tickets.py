@@ -181,19 +181,48 @@ class TicketPanelView(discord.ui.View):
 async def painel(interaction: discord.Interaction):
 
     embed = discord.Embed(
-        title="🎫 Central de Tickets",
-        description="Clique no botão abaixo para abrir um ticket.",
-        color=0xffffff
+        title="🎫 Central de Atendimento",
+        description=(
+            "Bem-vindo ao sistema de tickets.\n\n"
+            "Se precisar de ajuda, clique no botão abaixo para abrir um atendimento.\n"
+            "Nossa equipe responderá assim que possível."
+        ),
+        color=0x2B2D31
     )
 
     embed.add_field(
-        name="📌 Regras",
+        name="📌 Antes de abrir um ticket",
         value=(
-            "• Descreva seu problema\n"
-            "• Não abra tickets duplicados\n"
-            "• Aguarde a equipe responder"
+            "• Descreva seu problema com detalhes.\n"
+            "• Aguarde a resposta da equipe.\n"
+            "• Evite abrir tickets duplicados.\n"
+            "• Mantenha o respeito durante o atendimento."
         ),
         inline=False
+    )
+
+    embed.add_field(
+        name="ℹ️ Informações",
+        value=(
+            "• Apenas você e a equipe terão acesso ao ticket.\n"
+            "• O ticket será encerrado após a resolução.\n"
+            "• Um ticket por usuário."
+        ),
+        inline=False
+    )
+
+    # 📌 THUMBNAIL (logo pequeno no canto)
+    embed.set_thumbnail(
+        url=interaction.guild.icon.url if interaction.guild and interaction.guild.icon else None
+    )
+
+    # 📌 BANNER GRANDE (igual da imagem)
+    if interaction.guild and interaction.guild.banner:
+        embed.set_image(url=interaction.guild.banner.url)
+
+    # 📌 FOOTER igual o seu antigo estilo
+    embed.set_footer(
+        text=f"{interaction.guild.name} • Sistema de Tickets"
     )
 
     await interaction.response.send_message(
