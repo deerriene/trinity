@@ -2,6 +2,10 @@ import discord
 import os
 from discord import app_commands
 from level import add_xp
+from tickets import TicketView, painel
+
+TICKET_CATEGORY_ID = 1519885556006391851  # ID da categoria dos tickets
+STAFF_ROLE_ID = 1520117326551449730       # ID do cargo da staff
 
 class Trinity(discord.Client):
     def __init__(self):
@@ -11,6 +15,8 @@ class Trinity(discord.Client):
         self.tree = app_commands.CommandTree(self)
 
     async def setup_hook(self):
+        self.tree.add_command(painel)
+        self.add_view(TicketView())
         await self.tree.sync()
 
     async def on_ready(self):
@@ -70,8 +76,7 @@ class Trinity(discord.Client):
 
                 if canal:
                     await canal.send(
-                        content=f"🎉 Parabéns {message.author.mention}! Você subiu para o **nível {level}**!",
-                        file=discord.File(img, filename="levelup.png")
+                        content=f"🎉 Parabéns {message.author.mention}! Você subiu para o **nível {level}**!"
                     )
 
 bot = Trinity()
@@ -88,5 +93,3 @@ async def olamundo(interaction:discord.Interaction):
 async def olamundo(interaction:discord.Interaction,numero1:int,numero2:int):
     numero_somado = numero1 + numero2
     await interaction.response.send_message(f"O numero somado é {numero_somado}.",ephemeral=True)
-    
-bot.run(os.getenv("DISCORD_TOKEN"))
