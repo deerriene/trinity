@@ -1,61 +1,132 @@
 import discord
+import io
 from discord import app_commands
 
-# ========= CONFIGURE =========
+# ========= CONFIG =========
 TICKET_CATEGORY_ID = 1519885556006391851
 STAFF_ROLE_ID = 1520117326551449730
-# =============================
+TICKET_LOG_CHANNEL_ID = 1520118378063204352
+# ==========================
 
 
+# ==========================
+# TRANSCRIPT
+# ==========================
+async def gerar_transcript(channel: discord.TextChannel):
+    messages = []
+
+    async for msg in channel.history(oldest_first=True, limit=None):
+        time = msg.created_at.strftime("%d/%m/%Y %H:%M")
+        content = msg.content if msg.content else "[anexo/mídia]"
+        messages.append(f"[{time}] {msg.author}: {content}")
+
+    texto = "\n".join(messages)
+
+    return discord.File(
+        fp=io.BytesIO(texto.encode("utf-8")),
+        filename=f"transcript-{channel.name}.txt"
+    )
+
+
+# ==========================
+# BOTÃO FECHAR TICKET
+# ==========================
+class CloseTicketButton(discord.ui.Button):
+    def __init__(self):
+        super().__init__(
+            label="Fechar Ticket",
+            emoji="🔒",
+            style=discord.ButtonStyle.red,
+            custom_id="fechar_ticket"
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+
+        staff = interaction.guild.get_role(STAFF_ROLE_ID)
+
+        if staff not in interaction.user.roles:
+            return await interaction.response.send_message(
+                "❌ Apenas a equipe pode fechar tickets.",
+                ephemeral=True
+            )
+
+        await interaction.response.send_message(
+            "🔒 Fechando ticket e gerando transcript...",
+            ephemeral=True
+        )
+
+        # gera transcript
+        transcript = await gerar_transcript(interaction.channel)
+
+        # envia log
+        log_channel = interaction.guild.get_channel(TICKET_LOG_CHANNEL_ID)
+
+        if log_channel:
+            await log_channel.send(
+                content=(
+                    f"🧾 Ticket fechado\n"
+                    f"📌 Canal: {interaction.channel.name}\n"
+                    f"👤 Fechado por: {interaction.user.mention}"
+                ),
+                file=transcript
+            )
+
+        # apaga canal
+        await interaction.channel.delete()
+
+
+# ==========================
+# VIEW DO TICKET
+# ==========================
 class TicketView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
+        self.add_item(CloseTicketButton())
 
-    @discord.ui.button(
-        label="Abrir Ticket",
-        emoji="🎫",
-        style=discord.ButtonStyle.green,
-        custom_id="abrir_ticket"
-    )
-    async def abrir_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
+
+# ==========================
+# BOTÃO ABRIR TICKET
+# ==========================
+class OpenTicketButton(discord.ui.Button):
+    def __init__(self):
+        super().__init__(
+            label="Abrir Ticket",
+            emoji="🎫",
+            style=discord.ButtonStyle.green,
+            custom_id="abrir_ticket"
+        )
+
+    async def callback(self, interaction: discord.Interaction):
 
         categoria = interaction.guild.get_channel(TICKET_CATEGORY_ID)
 
-        if categoria is None:
-            await interaction.response.send_message(
-                "❌ Categoria não encontrada.",
+        if not isinstance(categoria, discord.CategoryChannel):
+            return await interaction.response.send_message(
+                "❌ Categoria inválida.",
                 ephemeral=True
             )
-            return
 
-        # Verifica se o usuário já possui um ticket
-        for canal in categoria.text_channels:
+        # anti-duplicação
+        for canal in interaction.guild.text_channels:
             if canal.topic == str(interaction.user.id):
-                await interaction.response.send_message(
-                    f"Você já possui um ticket: {canal.mention}",
+                return await interaction.response.send_message(
+                    f"❌ Você já tem um ticket: {canal.mention}",
                     ephemeral=True
                 )
-                return
 
         staff = interaction.guild.get_role(STAFF_ROLE_ID)
 
         overwrites = {
-            interaction.guild.default_role: discord.PermissionOverwrite(
-                view_channel=False
-            ),
-
+            interaction.guild.default_role: discord.PermissionOverwrite(view_channel=False),
             interaction.user: discord.PermissionOverwrite(
                 view_channel=True,
                 send_messages=True,
-                attach_files=True,
                 read_message_history=True
             ),
-
             interaction.guild.me: discord.PermissionOverwrite(
                 view_channel=True,
                 send_messages=True,
-                manage_channels=True,
-                manage_messages=True
+                manage_channels=True
             )
         }
 
@@ -76,15 +147,15 @@ class TicketView(discord.ui.View):
             title="🎫 Ticket criado",
             description=(
                 f"Olá {interaction.user.mention}!\n\n"
-                "Explique o seu problema.\n"
-                "Nossa equipe responderá em breve."
+                "Explique seu problema e aguarde a equipe."
             ),
             color=0x5865F2
         )
 
         await canal.send(
-            content=f"{interaction.user.mention}",
-            embed=embed
+            content=interaction.user.mention,
+            embed=embed,
+            view=TicketView()
         )
 
         await interaction.response.send_message(
@@ -93,53 +164,39 @@ class TicketView(discord.ui.View):
         )
 
 
+# ==========================
+# PAINEL DE TICKETS
+# ==========================
+class TicketPanelView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+        self.add_item(OpenTicketButton())
+
+
 @app_commands.command(
     name="painel",
     description="Enviar painel de tickets"
 )
 @app_commands.checks.has_permissions(administrator=True)
 async def painel(interaction: discord.Interaction):
+
     embed = discord.Embed(
-        title="🎫 Central de Atendimento",
-        description=(
-            "Bem-vindo ao sistema de tickets.\n\n"
-            "Se precisar de ajuda, clique no botão abaixo para abrir um atendimento.\n"
-            "Nossa equipe responderá assim que possível."
-        ),
+        title="🎫 Central de Tickets",
+        description="Clique no botão abaixo para abrir um ticket.",
         color=0xffffff
     )
 
     embed.add_field(
-        name="📌 Antes de abrir um ticket",
+        name="📌 Regras",
         value=(
-            "• Descreva seu problema com detalhes.\n"
-            "• Aguarde a resposta da equipe.\n"
-            "• Evite abrir tickets duplicados.\n"
-            "• Mantenha o respeito durante o atendimento."
+            "• Descreva seu problema\n"
+            "• Não abra tickets duplicados\n"
+            "• Aguarde a equipe responder"
         ),
         inline=False
     )
 
-    embed.add_field(
-        name="ℹ️ Informações",
-        value=(
-            "• Apenas você e a equipe terão acesso ao ticket.\n"
-            "• O ticket será encerrado após a resolução.\n"
-            "• Um ticket por usuário."
-        ),
-        inline=False
+    await interaction.response.send_message(
+        embed=embed,
+        view=TicketPanelView()
     )
-
-    embed.set_thumbnail(
-        url=interaction.guild.icon.url if interaction.guild and interaction.guild.icon else None
-    )
-
-    if interaction.guild and interaction.guild.banner:
-        embed.set_image(url=interaction.guild.banner.url)
-
-    embed.set_footer(
-        text=f"{interaction.guild.name} • Sistema de Tickets" if interaction.guild else "Sistema de Tickets"
-    )
-
-    # Send the panel with the ticket button
-    await interaction.response.send_message(embed=embed, view=TicketView())
