@@ -152,11 +152,13 @@ class OpenTicketButton(discord.ui.Button):
             color=0x5865F2
         )
 
+        staff = interaction.guild.get_role(STAFF_ROLE_ID)
+
         await canal.send(
-            content=interaction.user.mention,
-            embed=embed,
-            view=TicketView()
-        )
+    content=f"{interaction.user.mention} {staff.mention if staff else ''}",
+    embed=embed,
+    view=TicketView()
+)
 
         await interaction.response.send_message(
             f"✅ Ticket criado: {canal.mention}",
