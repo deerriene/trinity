@@ -93,3 +93,6 @@ async def olamundo(interaction:discord.Interaction):
 async def olamundo(interaction:discord.Interaction,numero1:int,numero2:int):
     numero_somado = numero1 + numero2
     await interaction.response.send_message(f"O numero somado é {numero_somado}.",ephemeral=True)
+    
+import os
+bot.run(os.getenv("DISCORD_TOKEN"))
