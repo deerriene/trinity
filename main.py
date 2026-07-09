@@ -1,7 +1,6 @@
 import discord
 import os
 from discord import app_commands
-from level import add_xp
 from tickets import TicketView, painel
 
 TICKET_CATEGORY_ID = 1519885556006391851  # ID da categoria dos tickets
