@@ -62,22 +62,6 @@ class Trinity(discord.Client):
             embed=embed
         )
 
-    async def on_message(self, message):
-        if message.author.bot:
-            return
-
-        resultado = await add_xp(message.author)
-
-        if resultado:
-            upou, level, xp = resultado
-
-            if upou:
-                canal = self.get_channel(1520140530489622709)
-
-                if canal:
-                    await canal.send(
-                        content=f"🎉 Parabéns {message.author.mention}! Você subiu para o **nível {level}**!"
-                    )
 
 bot = Trinity()
 
